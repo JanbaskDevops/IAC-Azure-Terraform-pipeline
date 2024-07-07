@@ -21,7 +21,7 @@ steps:
     backendAzureRmResourceGroupName: 'myResourceGroup2020ht66049'
     backendAzureRmStorageAccountName: 'mystr2020ht66049'
     backendAzureRmContainerName: 'terraformstate'
-    backendAzureRmKey: 'terraform. tfstate'
+    backendAzureRmKey: 'terraform.tfstate'
 
 - task: TerraformTaskV4@4
   inputs:
@@ -34,5 +34,5 @@ steps:
     backendAzureRmResourceGroupName: 'myResourceGroup2020ht66049'
     backendAzureRmStorageAccountName: 'mystr2020ht66049'
     backendAzureRmContainerName: 'terraformstate'
-    backendAzureRmKey: 'terraform. tfstate'
+    backendAzureRmKey: 'terraform.tfstate'
     environmentServiceNameAzureRM: azuretoterraform
