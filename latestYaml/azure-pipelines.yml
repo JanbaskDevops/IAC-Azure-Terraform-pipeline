@@ -1,0 +1,68 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  RESOURCE_GROUP_NAME: "myResourceGroup2020ht66049"
+  STORAGE_ACCOUNT_NAME: "mystr2020ht66049"
+  CONTAINER_NAME: "terraformstate"
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.x'
+    addToPath: true
+
+- task: AzureCLI@2
+  displayName: 'Azure Login'
+  inputs:
+    azureSubscription: 'azuretoterraform'  # Azure service connection name
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      # Create Resource Group
+      az group create --name $(RESOURCE_GROUP_NAME) --location eastus
+
+      # Create Storage Account
+      az storage account create --name $(STORAGE_ACCOUNT_NAME) --resource-group $(RESOURCE_GROUP_NAME) --location eastus --sku Standard_LRS
+
+      # Get Storage Account Key
+      ACCOUNT_KEY=$(az storage account keys list --resource-group $(RESOURCE_GROUP_NAME) --account-name $(STORAGE_ACCOUNT_NAME) --query '[0].value' -o tsv)
+
+      # Create Blob Container
+      az storage container create --name $(CONTAINER_NAME) --account-name $(STORAGE_ACCOUNT_NAME) --account-key $ACCOUNT_KEY
+
+- script: |
+    echo "Resource Group: $(RESOURCE_GROUP_NAME)"
+    echo "Storage Account: $(STORAGE_ACCOUNT_NAME)"
+    echo "Container: $(CONTAINER_NAME)"
+  displayName: 'Display Variables'
+
+- task: TerraformTaskV4@4
+  inputs:
+    workingDirectory: Terraform
+    provider: 'azurerm'
+    command: 'init'
+    backendAzureRmUseEnvironmentVariablesForAuthentication: false
+    backendAzureRmUseEntraIdForAuthentication: false
+    backendServiceArm: 'azuretoterraform'
+    backendAzureRmResourceGroupName: $(RESOURCE_GROUP_NAME)
+    backendAzureRmStorageAccountName: $(STORAGE_ACCOUNT_NAME)
+    backendAzureRmContainerName: $(CONTAINER_NAME)"
+    backendAzureRmKey: 'terraform.tfstate'
+
+- task: TerraformTaskV4@4
+  inputs:
+    workingDirectory: Terraform
+    provider: 'azurerm'
+    command: 'apply'
+    backendAzureRmUseEnvironmentVariablesForAuthentication: false
+    backendAzureRmUseEntraIdForAuthentication: false
+    backendServiceArm: 'azuretoterraform'
+    backendAzureRmResourceGroupName: $(RESOURCE_GROUP_NAME)
+    backendAzureRmStorageAccountName: $(STORAGE_ACCOUNT_NAME)
+    backendAzureRmContainerName: $(CONTAINER_NAME)"
+    backendAzureRmKey: 'terraform.tfstate'
+    environmentServiceNameAzureRM: azuretoterraform
